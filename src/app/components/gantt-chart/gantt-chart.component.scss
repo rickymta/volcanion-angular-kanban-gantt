@@ -1,0 +1,102 @@
+.gantt-chart {
+  border: 1px solid #ddd;
+  display: flex;
+
+  .gantt-task-names {
+    flex: 0 0 200px; /* Chiều rộng cột tên task */
+    border-right: 1px solid #ccc;
+    background-color: #f9f9f9;
+    padding: 10px;
+
+    .gantt-task-name {
+      height: 15px; /* Chiều cao tương ứng với mỗi hàng trong biểu đồ */
+      display: flex;
+      align-items: center;
+      padding-left: 10px;
+      border-bottom: 1px solid #ddd;
+      white-space: nowrap; /* Không cho text xuống dòng */
+      overflow: hidden;
+      text-overflow: ellipsis; /* Cắt chữ nếu quá dài */
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+
+  .gantt-container {
+    display: flex;
+    align-items: flex-start;
+    position: relative;
+
+    .gantt-tasks {
+      position: relative;
+
+      .gantt-header {
+        display: flex;
+        height: 15px;
+        border-bottom: 1px solid #ddd;
+
+        .gantt-header-cell {
+          flex: 1;
+          text-align: center;
+          border-right: 1px solid #ddd;
+        }
+      }
+
+      & text {
+        font-weight: bold;
+      }
+
+      .gantt-connections {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 0;
+      }
+
+      .gantt-row {
+        position: relative;
+        height: 15px;
+        border-bottom: 1px solid #ddd;
+
+        .gantt-bar {
+          position: absolute;
+          height: 15px;
+          background-color: #4CAF507F;
+          color: white;
+          text-align: center;
+          line-height: 15px;
+          border-radius: 4px;
+          z-index: 1;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0;
+
+          .task-title {
+            flex: 1;
+            text-align: left;
+            font-weight: bold;
+          }
+
+          .gantt-progress {
+            height: 100%;
+            border-radius: 5px 0 0 5px;
+            background-color: rgba(76, 175, 80, 1);
+            width: 50%;
+          }
+
+          .gantt-progress-text {
+            position: absolute;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+            min-width: 40px;
+          }
+        }
+      }
+    }
+  }
+}

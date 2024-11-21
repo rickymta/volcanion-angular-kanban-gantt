@@ -1,0 +1,63 @@
+<div class="gantt-chart">
+  <svg class="gantt-connections" [attr.height]="tasks.length * 40" [attr.width]="getChartWidth()">
+    <!-- Vẽ các đoạn thẳng -->
+    <line
+      *ngFor="let connection of connections"
+      [attr.x1]="connection.x1"
+      [attr.y1]="connection.y1"
+      [attr.x2]="connection.x2"
+      [attr.y2]="connection.y2"
+      stroke="gray"
+      stroke-width="2"
+    ></line>
+    <defs>
+      <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L9,3 z" fill="gray"></path>
+      </marker>
+    </defs>
+  </svg>
+
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th *ngFor="let day of getDaysInRange()" class="gantt-header-cell">
+          {{ day | date: 'dd/MM' }}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let task of tasks; let i = index" class="gantt-row">
+        <td>{{task.title}}</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="gantt-container">
+    <!-- Task Rows -->
+    <div class="gantt-tasks">
+      <!-- Tiêu đề -->
+      <div class="gantt-header">
+        <div *ngFor="let day of getDaysInRange()" class="gantt-header-cell">
+          {{ day | date: 'dd/MM' }}
+        </div>
+      </div>
+
+      <div *ngFor="let task of tasks; let i = index" class="gantt-row">
+        <!-- Task Bar -->
+        <div
+          class="gantt-bar"
+          [style.left]="calculatePosition(task.actualStartDate!) + 'px'"
+          [style.width]="calculateWidth(task.actualStartDate!, task.actualEndDate!) + 'px'"
+        >
+          <!-- Thanh tiến độ -->
+          <div class="gantt-progress" [style.width]="task.progress + '%'"></div>
+
+          <!-- Hiển thị % hoàn thành -->
+          <div class="gantt-progress-text">{{ task.progress }}%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

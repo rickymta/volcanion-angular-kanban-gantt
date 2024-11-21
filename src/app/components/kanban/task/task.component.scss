@@ -1,0 +1,74 @@
+.kanban-task {
+  background-color: #f4f4f4;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: grab;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+  .kanban-task-title {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+
+    h4 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: bold;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: block;
+      width: 100%;
+    }
+  }
+
+  .kanban-task-tags {
+    min-height: 20px;
+    display: flex;
+    gap: 5px;
+    margin: 10px 0;
+
+    .kanban-task-item {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: #f4f4f4;
+      font-size: 0.8rem;
+    }
+  }
+
+  .kanban-task-footer {
+    display: flex;
+    justify-content: space-between;
+
+    .kanban-task-code {
+      span {
+        width: 100%;
+        min-height: 25px;
+        line-height: 25px;
+        padding: 5px 15px;
+        border-radius: 5px;
+        border: 1px solid #18426d;
+        background-color: #007bff;
+        color: #f4f4f4;
+        font-size: 0.8rem;
+        font-weight: bolder;
+      }
+
+      .kanban-task-plan {
+        margin-top: 10px;
+        font-size: 0.7rem;
+      }
+    }
+
+    .kanban-task-assignee {
+      img {
+        width: 40px;
+        height: 40px;
+        border: 1px solid #979696;
+        border-radius: 50%;
+      }
+    }
+  }
+}

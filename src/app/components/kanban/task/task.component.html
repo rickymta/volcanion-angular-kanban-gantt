@@ -1,0 +1,30 @@
+<div
+  class="kanban-task"
+  draggable="true"
+  (dragstart)="onDragStart($event)"
+  (dragend)="onDragEnd($event)"
+>
+  <div class="kanban-task-title">
+    <h4>{{ task.title }}</h4>
+    <span>{{task.status}}</span>
+  </div>
+  <div class="kanban-task-tags">
+    <span
+      *ngFor="let tag of task.labels"
+      class="kanban-task-item"
+      [style.backgroundColor]="tag.color"
+    >
+      {{ tag.name }}
+    </span>
+  </div>
+  <div class="kanban-task-footer">
+    <div class="kanban-task-code">
+      <span>{{task.code}}</span>
+      <div class="kanban-task-plan">{{ task.planStartDate | date:'shortDate' }} - {{ task.planEndDate | date:'shortDate' }}</div>
+    </div>
+    <div class="kanban-task-assignee">
+      <img src="{{task.assignee?.avatar}}" alt="avatar" />
+    </div>
+  </div>
+</div>
+
