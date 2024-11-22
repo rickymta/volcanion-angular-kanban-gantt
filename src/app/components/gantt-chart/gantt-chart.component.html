@@ -49,10 +49,16 @@
       <!-- Vẽ các task -->
       <g *ngFor="let task of tasks; let i = index">
         <g
-          (mouseenter)="showTaskInfo(task, i)"
+          (mouseenter)="showTaskInfo(task, $event)"
           (mouseleave)="hideTaskInfo()">
+
           <!-- Tên Task -->
-          <text [attr.x]="10" [attr.y]="taskStartYAtIndex(i) + 20">
+          <text *ngIf="task.childrenLevel === 0" [attr.x]="10" [attr.y]="taskStartYAtIndex(i) + 20">
+            ▼ {{ task.code }} - {{ task.title }}
+          </text>
+
+          <text *ngIf="task.childrenLevel !== 0" [attr.x]="10 + 20 + (20 * task.childrenLevel!)"
+                [attr.y]="taskStartYAtIndex(i) + 20">
             {{ task.code }} - {{ task.title }}
           </text>
 
@@ -63,7 +69,7 @@
             [attr.width]="taskWidth(task.planStartDate, task.planEndDate)"
             [attr.height]="taskHeight"
             fill="#DFAA48FF"
-            (mouseenter)="showTaskInfo(task, i)"
+            (mouseenter)="showTaskInfo(task, $event)"
             (mouseleave)="hideTaskInfo()">
           </rect>
 
@@ -74,7 +80,7 @@
             [attr.width]="taskWidth(task.actualStartDate!, task.actualEndDate!)"
             [attr.height]="taskHeight"
             fill="#5486F1FF"
-            (mouseenter)="showTaskInfo(task, i)"
+            (mouseenter)="showTaskInfo(task, $event)"
             (mouseleave)="hideTaskInfo()">
           </rect>
 
@@ -102,83 +108,55 @@
                 fill="white" font-size="12" text-anchor="middle">
             {{ task.progress }}%
           </text>
-
-          <!-- Dropdown hiển thị thông tin khi hover vào task -->
-          <g *ngIf="hoveredTask">
-            <rect class="task-popup" [attr.x]="hoveredTaskX"
-                  [attr.y]="hoveredTaskY + taskHeight"
-                  width="300" height="150" fill="rgba(255, 255, 255, 1)"
-                  stroke="black"
-                  stroke-width="1"
-                  rx="5"
-                  ry="5"></rect>
-
-            <text [attr.x]="hoveredTaskX + 10" [attr.y]="hoveredTaskY + taskHeight + 20" fill="black">
-              <a [routerLink]="['/task', hoveredTask.id]"
-                 style="fill: blue; text-decoration: underline;">
-                [{{ hoveredTask.code }}]
-              </a> {{ hoveredTask.title }}
-            </text>
-
-            <text [attr.x]="hoveredTaskX + 10" [attr.y]="hoveredTaskY + taskHeight + 50" fill="black">
-              Status: {{ hoveredTask.status }}
-            </text>
-
-            <text [attr.x]="hoveredTaskX + 10" [attr.y]="hoveredTaskY + taskHeight + 70" fill="black">
-              Assignee: {{ hoveredTask.assignee?.name }}
-            </text>
-
-            <text [attr.x]="hoveredTaskX + 10" [attr.y]="hoveredTaskY + taskHeight + 90" fill="black">
-              Progress: {{ hoveredTask.progress }}%
-            </text>
-
-            <text [attr.x]="hoveredTaskX + 10" [attr.y]="hoveredTaskY + taskHeight + 110" fill="black">
-              Plan: {{ hoveredTask.planStartDate | date:'shortDate' }}
-              - {{ hoveredTask.planEndDate | date:'shortDate' }}
-            </text>
-
-            <text [attr.x]="hoveredTaskX + 10" [attr.y]="hoveredTaskY + taskHeight + 130" fill="black">
-              Actual: {{ hoveredTask.actualStartDate | date:'shortDate' }}
-              - {{ hoveredTask.actualEndDate | date:'shortDate' }}
-            </text>
-          </g>
-
-          <!-- Nút Toggle để mở/đóng task con -->
-          <text *ngIf="task.dependencies?.length"
-                [attr.x]="taskStartX(task.planStartDate) + taskWidth(task.planStartDate, task.planEndDate) + 10"
-                [attr.y]="taskStartYAtIndex(i) + taskHeight / 2"
-                fill="black" font-size="12"
-                (click)="toggleTask(task.id)" style="cursor: pointer; text-decoration: underline;">
-            {{ isTaskExpanded(task.id) ? 'Ẩn các task con' : 'Hiện các task con' }}
-          </text>
-
-          <!-- Hiển thị các task con nếu được mở -->
-          <g *ngIf="isTaskExpanded(task.id)">
-            <g *ngFor="let subTaskId of task.dependencies">
-              <ng-container *ngFor="let subTask of tasks">
-                <g *ngIf="subTask.id === subTaskId">
-                  <text [attr.x]="0" [attr.y]="taskStartYAtIndex(i) + 40">
-                    {{ subTask.code }} - {{ subTask.title }}
-                  </text>
-                  <!-- Vẽ task con -->
-                  <rect [attr.x]="taskStartX(subTask.planStartDate)"
-                        [attr.y]="taskStartYAtIndex(i) + 50"
-                        [attr.width]="taskWidth(subTask.planStartDate, subTask.planEndDate)"
-                        [attr.height]="taskHeight" fill="lightblue">
-                  </rect>
-                  <!-- Hiển thị % hoàn thành của task con -->
-                  <text *ngIf="subTask.progress !== undefined"
-                        [attr.x]="taskStartX(subTask.planStartDate) + taskWidth(subTask.planStartDate, subTask.planEndDate) / 2"
-                        [attr.y]="taskStartYAtIndex(i) + 70"
-                        fill="black" font-size="12" text-anchor="middle">
-                    {{ subTask.progress }}%
-                  </text>
-                </g>
-              </ng-container>
-            </g>
-          </g>
         </g>
+
+        <!-- Vẽ đường nối giữa task cha và task con -->
+        <path *ngFor="let child of getChildTasks(task.id)"
+              [attr.d]="drawConnectorPath(task, child)"
+              fill="none"
+              stroke="black"
+              stroke-width="1"
+              stroke-linejoin="round">
+        </path>
       </g>
     </svg>
+
+    <!-- Dropdown hiển thị thông tin khi hover vào task -->
+    <div *ngIf="hoveredTask"
+         class="task-popup"
+         [style.left.px]="hoveredTaskX"
+         [style.top.px]="hoveredTaskY"
+         (mouseenter)="keepTaskInfoVisible()"
+         (mouseleave)="removeTaskInfoVisibility()">
+
+      <div>
+        <a [routerLink]="['/task', hoveredTask.id]"
+           style="fill: blue; text-decoration: underline;">
+          [{{ hoveredTask.code }}]
+        </a> {{ hoveredTask.title }}
+      </div>
+
+      <div>
+        Status: {{ hoveredTask.status }}
+      </div>
+
+      <div>
+        Assignee: {{ hoveredTask.assignee?.name }}
+      </div>
+
+      <div>
+        Progress: {{ hoveredTask.progress }}%
+      </div>
+
+      <div>
+        Plan: {{ hoveredTask.planStartDate | date:'shortDate' }}
+        - {{ hoveredTask.planEndDate | date:'shortDate' }}
+      </div>
+
+      <div>
+        Actual: {{ hoveredTask.actualStartDate | date:'shortDate' }}
+        - {{ hoveredTask.actualEndDate | date:'shortDate' }}
+      </div>
+    </div>
   </div>
 </div>

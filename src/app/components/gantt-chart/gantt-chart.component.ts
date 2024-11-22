@@ -20,7 +20,7 @@ export class GanttChartComponent implements OnInit {
     {
       id: '1',
       title: 'Task 1',
-      code: 'T1',
+      code: 'T-001',
       planStartDate: new Date('2024-11-01'),
       planEndDate: new Date('2024-11-10'),
       actualStartDate: new Date('2024-11-02'),
@@ -28,12 +28,13 @@ export class GanttChartComponent implements OnInit {
       assignee: null,
       status: 'In Progress',
       description: 'Description of Task 1',
-      progress: 50
+      progress: 50,
+      childrenLevel: 0
     },
     {
       id: '2',
       title: 'Task 2',
-      code: 'T2',
+      code: 'T-002',
       planStartDate: new Date('2024-11-05'),
       planEndDate: new Date('2024-11-15'),
       actualStartDate: new Date('2024-11-06'),
@@ -41,7 +42,38 @@ export class GanttChartComponent implements OnInit {
       assignee: null,
       status: 'In Progress',
       description: 'Description of Task 2',
-      progress: 75
+      progress: 80,
+      childrenLevel: 1,
+      parentId: '1'
+    },
+    {
+      id: '3',
+      title: 'Task 3',
+      code: 'T-003',
+      planStartDate: new Date('2024-11-08'),
+      planEndDate: new Date('2024-11-18'),
+      actualStartDate: new Date('2024-11-09'),
+      actualEndDate: new Date('2024-11-17'),
+      assignee: null,
+      status: 'In Progress',
+      description: 'Description of Task 3',
+      progress: 85,
+      childrenLevel: 2,
+      parentId: '2'
+    },
+    {
+      id: '4',
+      title: 'Task 4',
+      code: 'T-004',
+      planStartDate: new Date('2024-11-05'),
+      planEndDate: new Date('2024-11-15'),
+      actualStartDate: new Date('2024-11-06'),
+      actualEndDate: new Date('2024-11-14'),
+      assignee: null,
+      status: 'In Progress',
+      description: 'Description of Task 4',
+      progress: 75,
+      childrenLevel: 0
     }
   ];
   filteredTasks: TaskModel[] = [];
@@ -59,34 +91,34 @@ export class GanttChartComponent implements OnInit {
   hoveredTask: TaskModel | null = null;
   hoveredTaskX: number = 0;
   hoveredTaskY: number = 0;
-
-  // Để giữ trạng thái mở/đóng cho mỗi task
-  expandedTasks: Set<string> = new Set();
-
-  // Hàm kiểm tra xem task có được mở hay không
-  isTaskExpanded(taskId: string): boolean {
-    return this.expandedTasks.has(taskId);
-  }
-
-  // Hàm mở/đóng task con
-  toggleTask(taskId: string): void {
-    if (this.expandedTasks.has(taskId)) {
-      this.expandedTasks.delete(taskId);
-    } else {
-      this.expandedTasks.add(taskId);
-    }
-  }
+  isMouseInTaskOrDropdown: boolean = false;
 
   // Hàm hiển thị thông tin task khi hover
-  showTaskInfo(task: TaskModel, index: number): void {
+  showTaskInfo(task: TaskModel, event: MouseEvent): void {
     this.hoveredTask = task;
+    const index = this.tasks.indexOf(task);
     this.hoveredTaskX = this.taskStartX(task.planStartDate); // Vị trí X của task
-    this.hoveredTaskY = this.taskStartYAtIndex(index); // Vị trí Y của task
+    this.hoveredTaskY = this.taskStartYAtIndex(index) + 20; // Vị trí Y của task
+    this.isMouseInTaskOrDropdown = true;
+  }
+
+  keepTaskInfoVisible(): void {
+    this.isMouseInTaskOrDropdown = true;
   }
 
   // Hàm ẩn dropdown khi hover hết
   hideTaskInfo(): void {
-    this.hoveredTask = null;
+    // Đợi một khoảng thời gian nhỏ để kiểm tra nếu chuột rời khỏi cả dropdown và task
+    setTimeout(() => {
+      if (!this.isMouseInTaskOrDropdown) {
+        this.hoveredTask = null;
+      }
+    }, 100);
+  }
+
+  removeTaskInfoVisibility(): void {
+    this.isMouseInTaskOrDropdown = false;
+    this.hideTaskInfo(); // Kiểm tra lại trạng thái khi chuột rời khỏi dropdown
   }
 
   ngOnInit(): void {
@@ -140,5 +172,38 @@ export class GanttChartComponent implements OnInit {
 
   get taskStartY(): number {
     return this.headerHeight + 20;
+  }
+
+  getChildTasks(parentId: string): TaskModel[] {
+    return this.tasks.filter(task => task.parentId === parentId);
+  }
+
+  drawConnectorPath(parent: TaskModel, child: TaskModel): string {
+    const parentX = this.taskStartX(parent.planStartDate); // Vị trí X của task cha
+    const parentY = this.taskStartYAtIndex(this.tasks.indexOf(parent)) + this.taskHeight / 2; // Vị trí Y của task cha
+
+    const childX = this.taskStartX(child.planStartDate); // Vị trí X của task con
+    const childY = this.taskStartYAtIndex(this.tasks.indexOf(child)) + this.taskHeight / 2; // Vị trí Y của task con
+
+    const cornerRadius = 5; // Bán kính bo góc
+    const gap = 20;
+
+    // Tính toán các điểm để vẽ đường nối
+    const outLeftX = parentX - gap; // Đi ra bên trái từ mép ngoài của task cha
+    const inRightX = childX;       // Mép trái của task con
+
+    if (parentY === childY) {
+      // Nếu cùng trên một hàng, vẽ đường thẳng ngang
+      return `M ${parentX} ${parentY} H ${inRightX}`;
+    } else {
+      // Nếu khác hàng, vẽ đường cong bo góc
+      return `
+      M ${parentX} ${parentY}
+      H ${outLeftX}
+      V ${childY - cornerRadius}
+      A ${cornerRadius} ${cornerRadius} 1 0 0 ${outLeftX + cornerRadius} ${childY}
+      H ${inRightX}
+    `;
+    }
   }
 }

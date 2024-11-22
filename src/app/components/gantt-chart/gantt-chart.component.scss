@@ -2,26 +2,37 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-}
+  position: relative;
 
-.filter-section {
-  margin-bottom: 20px;
-}
+  .filter-section {
+    margin-bottom: 20px;
+  }
 
-.chart-section {
-  overflow-x: scroll;
-}
+  .chart-section {
+    overflow-x: scroll;
+    position: relative;
 
-rect.plan {
-  fill: #dfaa48;
-  opacity: 0.8;
-}
+    svg {
+      rect.plan {
+        fill: #dfaa48;
+        opacity: 0.8;
+      }
 
-rect.actual {
-  fill: rgb(152, 107, 28);
-  opacity: 0.8;
-}
+      rect.actual {
+        fill: rgb(152, 107, 28);
+        opacity: 0.8;
+      }
+    }
 
-.task-popup {
-  border: 1px solid black;
+    .task-popup {
+      position: absolute;
+      background: white;
+      border: 1px solid black;
+      border-radius: 5px;
+      padding: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      pointer-events: auto;
+    }
+  }
 }

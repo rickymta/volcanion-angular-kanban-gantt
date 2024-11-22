@@ -14,5 +14,6 @@ export interface TaskModel {
   description: string;
   labels?: LabelModel[];
   progress?: number;
-  dependencies?: string[];
+  parentId?: string;
+  childrenLevel?: number;
 }
