@@ -1,63 +1,184 @@
-<div class="gantt-chart">
-  <svg class="gantt-connections" [attr.height]="tasks.length * 40" [attr.width]="getChartWidth()">
-    <!-- Vẽ các đoạn thẳng -->
-    <line
-      *ngFor="let connection of connections"
-      [attr.x1]="connection.x1"
-      [attr.y1]="connection.y1"
-      [attr.x2]="connection.x2"
-      [attr.y2]="connection.y2"
-      stroke="gray"
-      stroke-width="2"
-    ></line>
-    <defs>
-      <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
-        <path d="M0,0 L0,6 L9,3 z" fill="gray"></path>
-      </marker>
-    </defs>
-  </svg>
+<div class="gantt-container">
+  <div class="filter-section">
+    <input type="month" [(ngModel)]="selectedMonth" (change)="updateChart()" />
+  </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th></th>
-        <th *ngFor="let day of getDaysInRange()" class="gantt-header-cell">
+  <div class="chart-section">
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" [attr.width]="chartWidth"
+         [attr.height]="chartHeight" style="border: 1px solid black;">
+      <g>
+        <rect
+          x="0"
+          y="0"
+          [attr.width]="chartWidth"
+          [attr.height]="headerHeight"
+          fill="lightgray">
+        </rect>
+        <text
+          [attr.x]="chartWidth / 2"
+          y="20"
+          text-anchor="middle">
+        </text>
+      </g>
+
+      <g>
+        <line
+          [attr.x1]="0" [attr.y1]="0"
+          [attr.x2]="chartWidth" [attr.y2]="0"
+          stroke="black" stroke-width="1">
+        </line>
+        <text *ngFor="let day of getDaysInChart()"
+              [attr.x]="taskStartX(day)"
+              [attr.y]="15"
+              font-size="10">
           {{ day | date: 'dd/MM' }}
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let task of tasks; let i = index" class="gantt-row">
-        <td>{{task.title}}</td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
+        </text>
+      </g>
 
-  <div class="gantt-container">
-    <!-- Task Rows -->
-    <div class="gantt-tasks">
-      <!-- Tiêu đề -->
-      <div class="gantt-header">
-        <div *ngFor="let day of getDaysInRange()" class="gantt-header-cell">
-          {{ day | date: 'dd/MM' }}
-        </div>
-      </div>
+      <!-- Vẽ các đường kẻ dọc -->
+      <g>
+        <line *ngFor="let day of getDaysInChart(); let i = index"
+              [attr.x1]="taskStartX(day)"
+              [attr.y1]="0"
+              [attr.x2]="taskStartX(day)"
+              [attr.y2]="chartHeight"
+              stroke="lightgray" stroke-width="1">
+        </line>
+      </g>
 
-      <div *ngFor="let task of tasks; let i = index" class="gantt-row">
-        <!-- Task Bar -->
-        <div
-          class="gantt-bar"
-          [style.left]="calculatePosition(task.actualStartDate!) + 'px'"
-          [style.width]="calculateWidth(task.actualStartDate!, task.actualEndDate!) + 'px'"
-        >
-          <!-- Thanh tiến độ -->
-          <div class="gantt-progress" [style.width]="task.progress + '%'"></div>
+      <!-- Vẽ các task -->
+      <g *ngFor="let task of tasks; let i = index">
+        <g
+          (mouseenter)="showTaskInfo(task, i)"
+          (mouseleave)="hideTaskInfo()">
+          <!-- Tên Task -->
+          <text [attr.x]="10" [attr.y]="taskStartYAtIndex(i) + 20">
+            {{ task.code }} - {{ task.title }}
+          </text>
+
+          <!-- Bar Kế hoạch (Plan) -->
+          <rect
+            [attr.x]="taskStartX(task.planStartDate)"
+            [attr.y]="taskStartYAtIndex(i)"
+            [attr.width]="taskWidth(task.planStartDate, task.planEndDate)"
+            [attr.height]="taskHeight"
+            fill="#DFAA48FF"
+            (mouseenter)="showTaskInfo(task, i)"
+            (mouseleave)="hideTaskInfo()">
+          </rect>
+
+          <!-- Bar Thực tế (Actual) -->
+          <rect
+            [attr.x]="taskStartX(task.actualStartDate!)"
+            [attr.y]="taskStartYAtIndex(i)"
+            [attr.width]="taskWidth(task.actualStartDate!, task.actualEndDate!)"
+            [attr.height]="taskHeight"
+            fill="#5486F1FF"
+            (mouseenter)="showTaskInfo(task, i)"
+            (mouseleave)="hideTaskInfo()">
+          </rect>
+
+          <!-- Bar tiến độ % -->
+          <rect
+            [attr.x]="taskStartX(task.actualStartDate!)"
+            [attr.y]="taskStartYAtIndex(i)"
+            [attr.width]="taskPercentWith(task.actualStartDate!, task.actualEndDate!, task.progress!)"
+            [attr.height]="taskHeight"
+            fill="#1B4FC1FF">
+          </rect>
+
+          <!-- Đường kẻ ngang dưới mỗi task -->
+          <line [attr.x1]="0"
+                [attr.y1]="taskStartYAtIndex(i) + taskHeight + 5"
+                [attr.x2]="chartWidth"
+                [attr.y2]="taskStartYAtIndex(i) + taskHeight + 5"
+                stroke="lightgray" stroke-width="1">
+          </line>
 
           <!-- Hiển thị % hoàn thành -->
-          <div class="gantt-progress-text">{{ task.progress }}%</div>
-        </div>
-      </div>
-    </div>
+          <text *ngIf="task.progress !== undefined"
+                [attr.x]="taskStartX(task.planStartDate) + taskWidth(task.planStartDate, task.planEndDate) / 2"
+                [attr.y]="taskStartYAtIndex(i) + taskHeight / 2"
+                fill="white" font-size="12" text-anchor="middle">
+            {{ task.progress }}%
+          </text>
+
+          <!-- Dropdown hiển thị thông tin khi hover vào task -->
+          <g *ngIf="hoveredTask">
+            <rect class="task-popup" [attr.x]="hoveredTaskX"
+                  [attr.y]="hoveredTaskY + taskHeight"
+                  width="300" height="150" fill="rgba(255, 255, 255, 1)"
+                  stroke="black"
+                  stroke-width="1"
+                  rx="5"
+                  ry="5"></rect>
+
+            <text [attr.x]="hoveredTaskX + 10" [attr.y]="hoveredTaskY + taskHeight + 20" fill="black">
+              <a [routerLink]="['/task', hoveredTask.id]"
+                 style="fill: blue; text-decoration: underline;">
+                [{{ hoveredTask.code }}]
+              </a> {{ hoveredTask.title }}
+            </text>
+
+            <text [attr.x]="hoveredTaskX + 10" [attr.y]="hoveredTaskY + taskHeight + 50" fill="black">
+              Status: {{ hoveredTask.status }}
+            </text>
+
+            <text [attr.x]="hoveredTaskX + 10" [attr.y]="hoveredTaskY + taskHeight + 70" fill="black">
+              Assignee: {{ hoveredTask.assignee?.name }}
+            </text>
+
+            <text [attr.x]="hoveredTaskX + 10" [attr.y]="hoveredTaskY + taskHeight + 90" fill="black">
+              Progress: {{ hoveredTask.progress }}%
+            </text>
+
+            <text [attr.x]="hoveredTaskX + 10" [attr.y]="hoveredTaskY + taskHeight + 110" fill="black">
+              Plan: {{ hoveredTask.planStartDate | date:'shortDate' }}
+              - {{ hoveredTask.planEndDate | date:'shortDate' }}
+            </text>
+
+            <text [attr.x]="hoveredTaskX + 10" [attr.y]="hoveredTaskY + taskHeight + 130" fill="black">
+              Actual: {{ hoveredTask.actualStartDate | date:'shortDate' }}
+              - {{ hoveredTask.actualEndDate | date:'shortDate' }}
+            </text>
+          </g>
+
+          <!-- Nút Toggle để mở/đóng task con -->
+          <text *ngIf="task.dependencies?.length"
+                [attr.x]="taskStartX(task.planStartDate) + taskWidth(task.planStartDate, task.planEndDate) + 10"
+                [attr.y]="taskStartYAtIndex(i) + taskHeight / 2"
+                fill="black" font-size="12"
+                (click)="toggleTask(task.id)" style="cursor: pointer; text-decoration: underline;">
+            {{ isTaskExpanded(task.id) ? 'Ẩn các task con' : 'Hiện các task con' }}
+          </text>
+
+          <!-- Hiển thị các task con nếu được mở -->
+          <g *ngIf="isTaskExpanded(task.id)">
+            <g *ngFor="let subTaskId of task.dependencies">
+              <ng-container *ngFor="let subTask of tasks">
+                <g *ngIf="subTask.id === subTaskId">
+                  <text [attr.x]="0" [attr.y]="taskStartYAtIndex(i) + 40">
+                    {{ subTask.code }} - {{ subTask.title }}
+                  </text>
+                  <!-- Vẽ task con -->
+                  <rect [attr.x]="taskStartX(subTask.planStartDate)"
+                        [attr.y]="taskStartYAtIndex(i) + 50"
+                        [attr.width]="taskWidth(subTask.planStartDate, subTask.planEndDate)"
+                        [attr.height]="taskHeight" fill="lightblue">
+                  </rect>
+                  <!-- Hiển thị % hoàn thành của task con -->
+                  <text *ngIf="subTask.progress !== undefined"
+                        [attr.x]="taskStartX(subTask.planStartDate) + taskWidth(subTask.planStartDate, subTask.planEndDate) / 2"
+                        [attr.y]="taskStartYAtIndex(i) + 70"
+                        fill="black" font-size="12" text-anchor="middle">
+                    {{ subTask.progress }}%
+                  </text>
+                </g>
+              </ng-container>
+            </g>
+          </g>
+        </g>
+      </g>
+    </svg>
   </div>
 </div>
