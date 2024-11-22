@@ -1,2 +1,14 @@
-<app-gantt-chart></app-gantt-chart>
+<app-datatable
+  [totalItems]="totalItems"
+  [currentPage]="currentPage"
+  [data]="data"
+  [columns]="columns"
+  [pageSize]="pageSize"
+  [pageSizeOptions]="pageSizeOptions"
+  (pageChange)="onPageChange($event)"
+  (search)="onSearch($event)"
+  (sort)="onSort($event)"
+  (pageSizeChange)="onPageSizeChange($event)">
+</app-datatable>
+<!--<app-gantt-chart></app-gantt-chart>-->
 <!--<app-kanban-board></app-kanban-board>-->
